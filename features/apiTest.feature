@@ -30,4 +30,13 @@ Feature: apiTest
         When I send a GET request
         Then the response status code should be 500
 
+    Scenario: Hit /search on Consumerloan Service
+        Given my API endpoint is "http://localhost:8080/gateway"
+        When I accessed path "/consumerloan"
+        When I send a GET request
+        And  I set Cookies SessionId from response header
+        When I accessed path "/consumerloan/search"
+        When I send a GET request
+        Then the response status code should be 200
+
 

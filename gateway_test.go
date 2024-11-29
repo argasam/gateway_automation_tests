@@ -14,6 +14,7 @@ var (
 	servicePath  string
 	response     *http.Response
 	err          error
+	cookies      []*http.Cookie
 	responseBody map[string]interface{}
 )
 
@@ -28,10 +29,23 @@ func iAccessedPath(path string) error {
 }
 
 func iSendAGETRequest() error {
-	response, err = http.Get(apiEndpoint + servicePath)
+	url := apiEndpoint + servicePath
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return err
 	}
+	if len(cookies) > 0 {
+		for _, cookie := range cookies {
+			req.AddCookie(cookie)
+		}
+	}
+
+	client := &http.Client{}
+	response, err = client.Do(req)
+	if err != nil {
+		return err
+	}
+
 	defer response.Body.Close()
 
 	return json.NewDecoder(response.Body).Decode(&responseBody)
@@ -49,6 +63,11 @@ func theResponseShouldContain(expectedKey string, expectedResult string) error {
 	if !exists && result != expectedResult {
 		return fmt.Errorf("expected key %s not found in response body", expectedKey)
 	}
+	return nil
+}
+
+func iSetCookiesSessionId() error {
+	cookies = response.Cookies()
 	return nil
 }
 
@@ -73,4 +92,5 @@ func InitializeScenario(sc *godog.ScenarioContext) {
 	sc.When(`^I send a GET request$`, iSendAGETRequest)
 	sc.Then(`^the response status code should be (\d+)$`, theResponseStatusCodeShouldBe)
 	sc.Then(`^the "([^"]*)" should contain "([^"]*)"$`, theResponseShouldContain)
+	sc.Step(`^I set Cookies SessionId from response header$`, iSetCookiesSessionId)
 }
